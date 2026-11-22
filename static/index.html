@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ClipCraft AI</title>
+<style>
+:root{--bg:#08090d;--panel:#11131a;--line:#282b36;--muted:#9298a8;--orange:#ff713d;--green:#48d597}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 70% 0%,#25130f 0,transparent 35%),var(--bg);color:#f4f5f8;font:14px Inter,system-ui,Arial}
+header{height:68px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 5vw;position:sticky;top:0;background:#090a0eee;backdrop-filter:blur(12px);z-index:2}
+.brand{font-weight:900;letter-spacing:.5px}.brand b{color:var(--orange)}.tag{color:var(--muted);font-size:12px}
+main{max-width:1180px;margin:38px auto;padding:0 22px}.eyebrow{color:var(--orange);font-size:11px;letter-spacing:2px;font-weight:800}
+h1{font-size:clamp(28px,4vw,42px);margin:9px 0}.sub{color:var(--muted);max-width:650px;line-height:1.6}
+.grid{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;margin-top:28px}.panel{background:linear-gradient(145deg,#151720,#101219);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:0 18px 60px #0004}
+h2{font-size:16px;margin:0 0 17px}.tabs{display:flex;gap:8px;margin-bottom:18px}.tab,button{border:1px solid var(--line);background:#1b1e28;color:#f6f6f8;padding:10px 14px;border-radius:9px;cursor:pointer;font-weight:700}.tab.active{border-color:var(--orange);color:var(--orange);background:#ff713d12}
+label{display:block;color:#c6cad4;font-size:12px;margin:13px 0 7px}input,select{width:100%;background:#090b11;color:white;border:1px solid #303441;border-radius:9px;padding:13px;font:inherit}
+.drop{border:1px dashed #555b6b;border-radius:12px;padding:24px;text-align:center;color:var(--muted);cursor:pointer}.drop strong{color:white;display:block;margin-bottom:6px}
+.primary{background:linear-gradient(100deg,#ff713d,#ff9a4b);border:0;color:#1a0d08;width:100%;padding:14px;margin-top:17px;font-size:14px}
+.small{font-size:11px;color:var(--muted);line-height:1.5}.status{margin-top:18px;padding:14px;background:#090b11;border:1px solid var(--line);border-radius:10px;display:none}.bar{height:6px;background:#292d38;border-radius:9px;margin-top:10px;overflow:hidden}.bar span{display:block;height:100%;width:0;background:var(--orange);transition:width .3s}
+.statrow{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;margin:12px 0}.clip{border:1px solid var(--line);padding:13px;border-radius:11px;margin-top:10px;background:#0b0d13}.cliptop{display:flex;justify-content:space-between;gap:8px}.score{color:var(--green);font-weight:800}.clip p{color:#aeb4c1;font-size:12px;line-height:1.5}.clip a{color:var(--orange);text-decoration:none;font-weight:800;font-size:12px}.empty{border:1px dashed #343846;border-radius:12px;padding:36px 15px;text-align:center;color:var(--muted);line-height:1.7}
+footer{text-align:center;color:#646b7a;font-size:11px;padding:30px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}header{padding:0 18px}main{margin:24px auto}}
+</style>
+</head>
+<body>
+<header><div class="brand">◧ CLIP<b>CRAFT</b> <span class="tag">AI STUDIO</span></div><div class="tag">LOCAL MVP · API <span id="api">CHECKING</span></div></header>
+<main>
+<div class="eyebrow">YOUR LONG VIDEO. SHORT-FORM READY.</div><h1>Find the moments worth <span style="color:var(--orange)">clipping.</span></h1>
+<p class="sub">Upload a video or paste a YouTube link. ClipCraft transcribes the audio, ranks candidate moments and renders vertical clips for Shorts, Reels and TikTok.</p>
+<div class="grid">
+<section class="panel">
+<h2>01 / Add your source</h2>
+<div class="tabs"><button class="tab active" id="uploadTab" onclick="setMode('upload')">Upload video</button><button class="tab" id="youtubeTab" onclick="setMode('youtube')">YouTube link</button></div>
+<div id="uploadBox"><label>VIDEO FILE</label><div class="drop" onclick="document.getElementById('file').click()"><strong>＋ Choose a video</strong><span id="fileName">MP4, MOV, MKV, WEBM · up to your server's available storage</span></div><input id="file" type="file" accept="video/*" hidden onchange="document.getElementById('fileName').textContent=this.files[0]?.name||'Choose a video'"></div>
+<div id="youtubeBox" style="display:none"><label>YOUTUBE URL</label><input id="url" placeholder="https://www.youtube.com/watch?v=..."></div>
+<label>CAPTION LANGUAGE</label><select id="caption"><option value="bilingual" selected>Hindi + English (bilingual workflow)</option><option value="original">Original spoken language</option><option value="english">English</option></select>
+<div class="small" style="margin-top:9px">The current MVP transcribes speech and finds clip candidates. Bilingual subtitle translation and animated caption styling are planned next; this build does not yet burn translated captions into clips.</div>
+<button class="primary" onclick="startJob()">✦ FIND VIRAL MOMENTS</button>
+<div class="status" id="status"><div style="display:flex;justify-content:space-between"><b id="statusText">Starting…</b><span id="percent">0%</span></div><div class="bar"><span id="progress"></span></div><div class="small" id="detail" style="margin-top:9px">Please keep this page open.</div></div>
+</section>
+<section class="panel">
+<h2>02 / Detected moments</h2><div class="statrow"><span>RANKED BY HEURISTIC RETENTION SCORE</span><span id="clipCount">0 CLIPS</span></div>
+<div id="clips" class="empty">Your detected moments will appear here.<br><br><span style="color:var(--orange)">✦</span> Add a source video to begin.</div>
+</section>
+</div>
+</main>
+<footer>CLIPCRAFT AI · Prototype · Only process videos you own or have permission to use.</footer>
+<script>
+let mode='upload', timer=null;
+function setMode(m){mode=m;document.getElementById('uploadBox').style.display=m==='upload'?'block':'none';document.getElementById('youtubeBox').style.display=m==='youtube'?'block':'none';document.getElementById('uploadTab').classList.toggle('active',m==='upload');document.getElementById('youtubeTab').classList.toggle('active',m==='youtube')}
+async function startJob(){
+ const caption_mode=document.getElementById('caption').value;
+ let res;
+ try{
+  if(mode==='upload'){
+   const f=document.getElementById('file').files[0];if(!f){alert('Choose a video first.');return}
+   const fd=new FormData();fd.append('file',f);fd.append('caption_mode',caption_mode);
+   res=await fetch('/api/jobs/upload',{method:'POST',body:fd});
+  }else{
+   const url=document.getElementById('url').value.trim();if(!/^https?:\\/\\/(www\\.)?(youtube\\.com|youtu\\.be)\\//i.test(url)){alert('Enter a valid YouTube URL.');return}
+   res=await fetch('/api/jobs/youtube',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,caption_mode})});
+  }
+  const data=await res.json();if(!res.ok)throw new Error(data.detail||'Could not start job');
+  document.getElementById('status').style.display='block';poll(data.id);
+ }catch(e){alert(e.message)}
+}
+async function poll(id){
+ try{
+  const r=await fetch('/api/jobs/'+id),j=await r.json();
+  document.getElementById('statusText').textContent=j.status==='completed'?'Complete':j.status==='failed'?'Failed':j.message;
+  document.getElementById('percent').textContent=(j.progress||0)+'%';document.getElementById('progress').style.width=(j.progress||0)+'%';
+  document.getElementById('detail').textContent=j.error||j.note||j.message||'Processing';
+  if(j.clips?.length)renderClips(j.clips);
+  if(j.status==='failed'){clearTimeout(timer);return}
+  if(j.status==='completed'){clearTimeout(timer);return}
+  timer=setTimeout(()=>poll(id),1800);
+ }catch(e){document.getElementById('detail').textContent=e.message}
+}
+function renderClips(clips){
+ document.getElementById('clipCount').textContent=clips.length+' CLIPS';
+ document.getElementById('clips').className='';
+ document.getElementById('clips').innerHTML=clips.map((c,i)=>`<div class="clip"><div class="cliptop"><b>${String(i+1).padStart(2,'0')} / ${fmt(c.start)} — ${fmt(c.end)}</b><span class="score">${c.score}%</span></div><p>${esc(c.transcript||'Preview this moment')}</p><a href="${c.download}" download>↓ DOWNLOAD MP4</a></div>`).join('');
+}
+function fmt(s){return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0')}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+fetch('/api/health').then(r=>r.json()).then(()=>document.getElementById('api').textContent='ONLINE').catch(()=>document.getElementById('api').textContent='OFFLINE');
+</script>
+</body></html>
